@@ -58,8 +58,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/luckytaj-favicon', express.static(path.join(__dirname, 'luckytaj-favicon')));
 app.use('/favicon', express.static(path.join(__dirname, 'favicon')));
 
-// Serve admin panel static files
-app.use('/admin', express.static(path.join(__dirname, 'admin-panel')));
+// Serve admin panel static files (CSS, JS, etc.)
+app.use('/admin/assets', express.static(path.join(__dirname, 'admin-panel')));
 
 // Serve test files
 app.use('/tests', express.static(path.join(__dirname, 'tests')));
