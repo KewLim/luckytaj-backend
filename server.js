@@ -118,9 +118,17 @@ app.get('/admin/tournament-tv', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin-panel', 'tournament-tv.html'));
 });
 
-// Serve main frontend
+// Backend API root endpoint
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.json({ 
+        message: 'Lucky Taj Admin Backend API',
+        status: 'running',
+        endpoints: {
+            admin: '/admin',
+            api: '/api/',
+            health: '/health'
+        }
+    });
 });
 
 // Health check
