@@ -73,16 +73,22 @@ app.use(express.static(__dirname, {
 }));
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/luckytaj-admin', {
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/luckytaj-admin';
+
+mongoose.connect(MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     connectTimeoutMS: 10000,
     serverSelectionTimeoutMS: 5000,
 })
-.then(() => console.log('Connected to MongoDB'))
+.then(() => {
+    console.log('✅ Connected to MongoDB');
+    console.log('Database:', MONGO_URI.includes('mongodb.net') ? 'MongoDB Atlas (Cloud)' : 'Local MongoDB');
+})
 .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    console.log('Server will continue without MongoDB connection');
+    console.error('❌ MongoDB connection error:', err.message);
+    console.log('⚠️  Server will continue without MongoDB connection');
+    console.log('💡 Make sure MONGO_URI environment variable is set correctly');
 });
 
 // Routes
