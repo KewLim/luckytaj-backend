@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuckyTaj Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <img src="https://www.luckytaj.com/luckytaj/img/logo.png" alt="LuckyTaj" class="logo">
+                    <h2>Admin Panel</h2>
+                </div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-login btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </form>
+                <div id="loginError" class="error-message d-none"></div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="dashboard" class="dashboard d-none">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <img src="https://www.luckytaj.com/luckytaj/img/logo.png" alt="LuckyTaj" class="logo-small">
+                    <h1>Admin Panel</h1>
+                </div>
+                <div class="header-right">
+                    <span id="adminEmail" class="admin-email"></span>
+                    <div class="theme-toggle" id="themeToggle">🌙</div>
+                    <div class="india-time-display">
+                        <span id="indiaTime" class="time-text"></span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-secondary">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Dashboard Layout -->
+            <div class="dashboard-main">
+                <!-- Navigation Tabs -->
+                <nav class="tab-navigation">
+                    <button class="tab-btn active" data-tab="metrics">
+                        <i class="fas fa-chart-bar"></i> User Interaction Metrics
+                    </button>
+                    <button class="tab-btn" data-tab="otp-requests">
+                        <i class="fas fa-mobile-alt"></i> OTP Requests
+                    </button>
+                    <button class="tab-btn" data-tab="comments">
+                        <i class="fas fa-comments"></i> Fake Comments
+                    </button>
+                    <button class="tab-btn" data-tab="videos">
+                        <i class="fas fa-video"></i> TV Session
+                    </button>
+                    <button class="tab-btn" data-tab="tournament-tv">
+                        <i class="fas fa-tv"></i> Tournament TV
+                    </button>
+                    <button class="tab-btn" data-tab="games">
+                        <i class="fas fa-gamepad"></i> Daily Games
+                    </button>
+                    <button class="tab-btn" data-tab="winners">
+                        <i class="fas fa-trophy"></i> Winner Board
+                    </button>
+                    <button class="tab-btn" data-tab="jackpot">
+                        <i class="fas fa-coins"></i> Jackpot Timer
+                    </button>
+                    
+                </nav>
+
+                <!-- Content Sections -->
+                <main class="dashboard-content">
+                <!-- User Interaction Metrics Section -->
+                <section id="metrics" class="content-section active">
+                    <div class="section-header">
+                        <h2><i class="fas fa-chart-bar"></i> User Interaction Metrics</h2>
+                        <button class="btn btn-primary refresh-btn" onclick="refreshMetrics()">
+                            <i class="fas fa-sync-alt"></i> Refresh Data
+                        </button>
+                    </div>
+                    <div class="metrics-dashboard">
+                        <!-- Overview Cards -->
+                        <div class="metrics-overview">
+                            <div class="metric-card">
+                                <div class="metric-icon"><i class="fas fa-eye"></i></div>
+                                <div class="metric-content">
+                                    <h3>Total Views</h3>
+                                    <div class="metric-value" id="totalViews">-</div>
+                                    <div class="metric-change" id="totalViewsChange">+0% from last 24h</div>
+                                </div>
+                                <div class="metric-chart">
+                                    <canvas id="viewsChart" width="80" height="40"></canvas>
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-icon"><i class="fas fa-users"></i></div>
+                                <div class="metric-content">
+                                    <h3>Verified Phones</h3>
+                                    <div class="metric-value" id="verifiedPhones">-</div>
+                                    <div class="metric-change" id="verifiedPhonesChange">+0% from last 24h</div>
+                                </div>
+                                <div class="metric-chart">
+                                    <canvas id="visitorsChart" width="80" height="40"></canvas>
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-icon"><i class="fas fa-mouse-pointer"></i></div>
+                                <div class="metric-content">
+                                    <h3>Average CTR</h3>
+                                    <div class="metric-value" id="clickThroughRate">0%</div>
+                                    <div class="metric-change" id="clickThroughRateChange">+0% from yesterday</div>
+                                </div>
+                                <div class="metric-chart">
+                                    <canvas id="ctrChart" width="80" height="40"></canvas>
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-icon"><i class="fas fa-clock"></i></div>
+                                <div class="metric-content">
+                                    <h3>Avg. Time on Page</h3>
+                                    <div class="metric-value" id="avgTimeOnPage">0s</div>
+                                    <div class="metric-change" id="avgTimeOnPageChange">+0% from yesterday</div>
+                                </div>
+                                <div class="metric-chart">
+                                    <canvas id="timeChart" width="80" height="40"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Device Type Chart -->
+                        <div class="metrics-section">
+                            <h3>Device Type Distribution</h3>
+                            <div class="device-metrics">
+                                <div class="device-chart">
+                                    <div class="device-stat">
+                                        <span class="device-label"><i class="fas fa-mobile-alt"></i> Mobile</span>
+                                        <div class="device-bar">
+                                            <div class="device-fill mobile"></div>
+                                        </div>
+                                        <span class="device-percentage" id="mobilePercentage">0%</span>
+                                    </div>
+                                    <div class="device-stat">
+                                        <span class="device-label"><i class="fas fa-desktop"></i> Desktop</span>
+                                        <div class="device-bar">
+                                            <div class="device-fill desktop"></div>
+                                        </div>
+                                        <span class="device-percentage" id="desktopPercentage">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Per Tip Performance -->
+                        <div class="metrics-section">
+                            <div class="section-header-inline">
+                                <h3>Player Performance</h3>
+                                <div class="search-container">
+                                    <div class="search-box">
+                                        <i class="fas fa-search search-icon"></i>
+                                        <input type="text" id="tipSearchInput" placeholder="Search by Phone or Player ID..." class="search-input">
+                                        <button id="clearSearchBtn" class="clear-search d-none">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Date Selector Calendar -->
+                            <div class="date-selector-container">
+                                <div class="date-filters">
+                                    <div class="date-range-picker">
+                                        <label for="startDate">From:</label>
+                                        <div class="date-input-wrapper">
+                                            <input type="text" id="startDate" class="date-input" placeholder="Select start date">
+                                            <button type="button" class="calendar-btn" onclick="openDatePicker('startDate')">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </button>
+                                            <input type="date" id="startDateHidden" class="hidden-date-input" onchange="updateDateInput('startDate', this.value)">
+                                        </div>
+                                        <label for="endDate">To:</label>
+                                        <div class="date-input-wrapper">
+                                            <input type="text" id="endDate" class="date-input" placeholder="Select end date">
+                                            <button type="button" class="calendar-btn" onclick="openDatePicker('endDate')">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </button>
+                                            <input type="date" id="endDateHidden" class="hidden-date-input" onchange="updateDateInput('endDate', this.value)">
+                                        </div>
+                                        <button class="btn btn-secondary" onclick="clearDateFilter()">
+                                            <i class="fas fa-times"></i> Clear
+                                        </button>
+                                        <button class="btn btn-primary" onclick="filterByDateRange()">
+                                            <i class="fas fa-search"></i> Search
+                                        </button>
+                                    </div>
+                                    <div class="quick-filters">
+                                        <span class="filter-label">Quick filters:</span>
+                                        <button class="btn btn-outline" onclick="setQuickFilter('today')">Today</button>
+                                        <button class="btn btn-outline" onclick="setQuickFilter('week')">This Week</button>
+                                        <button class="btn btn-outline" onclick="setQuickFilter('month')">This Month</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tips-performance">
+                                <div class="table-container">
+                                    <div class="table-wrapper">
+                                        <table class="tips-table" id="tipsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Player ID</th>
+                                                    <th>Views</th>
+                                                    <th>Sessions</th>
+                                                    <th>Avg CTR</th>
+                                                    <th>Avg. Time</th>
+                                                    <th>Last Activity</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tipsTableBody">
+                                                <tr>
+                                                    <td colspan="6" class="no-data">No tip data available</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pagination Controls -->
+                            <div class="pagination-container">
+                                <div class="pagination-info">
+                                    <span id="tableInfo">Showing 1-10 of 25 entries</span>
+                                </div>
+                                <div class="pagination-controls">
+                                    <label for="pageSize">Items per page:</label>
+                                    <select id="pageSize" class="page-size-selector" onchange="changePageSize(this.value)">
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </div>
+                                <div class="pagination-buttons">
+                                    <button class="btn btn-outline pagination-btn" onclick="goToPage('first')" id="firstPageBtn">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </button>
+                                    <button class="btn btn-outline pagination-btn" onclick="goToPage('prev')" id="prevPageBtn">
+                                        <i class="fas fa-angle-left"></i>
+                                    </button>
+                                    <div class="page-numbers" id="pageNumbers">
+                                        <button class="btn btn-outline pagination-btn page-number active" onclick="goToPage(1)">1</button>
+                                        <button class="btn btn-outline pagination-btn page-number" onclick="goToPage(2)">2</button>
+                                        <button class="btn btn-outline pagination-btn page-number" onclick="goToPage(3)">3</button>
+                                    </div>
+                                    <button class="btn btn-outline pagination-btn" onclick="goToPage('next')" id="nextPageBtn">
+                                        <i class="fas fa-angle-right"></i>
+                                    </button>
+                                    <button class="btn btn-outline pagination-btn" onclick="goToPage('last')" id="lastPageBtn">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Latest Player Activity -->
+                        <div class="metrics-section">
+                            <div class="section-header-inline">
+                                <h3><i class="fas fa-clock"></i> Latest Player Activity</h3>
+                                <div class="activity-status">
+                                    <span class="live-indicator"></span>
+                                    <span>Auto-refreshing</span>
+                                </div>
+                            </div>
+                            <div class="activity-search-bar">
+                                <div class="search-container">
+                                    <div class="search-box">
+                                        <i class="fas fa-search search-icon"></i>
+                                        <input type="text" id="activitySearchInput" placeholder="Search by Phone or Player ID..." class="search-input" data-sharkid="__0">
+                                        <button id="clearActivitySearchBtn" class="clear-search d-none">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="player-activity">
+                                <div class="activity-container">
+                                    <div id="latestActivity" class="activity-list">
+                                        <div class="activity-loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <span>Loading latest player activity...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Comments Section -->
+                <section id="comments" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-comments"></i>Comments Management</h2>
+                        <button class="btn btn-primary" onclick="openCommentModal()">
+                            Add Comment
+                        </button>
+                    </div>
+                    <div id="commentsTable" class="comments-table">
+                        <!-- Comments will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Videos Section -->
+                <section id="videos" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-video"></i> TV Session Video</h2>
+                        <button class="btn btn-primary" onclick="openVideoModal()">
+                        Add Video
+                        </button>
+                    </div>
+                    <div class="video-info-box">
+                        <small><i class="fas fa-info-circle"></i> Multiple videos can be active simultaneously. A random active video will be displayed on each page refresh.</small>
+                    </div>
+                    <div id="videoHistory" class="video-history">
+                        <h3>Uploaded Videos</h3>
+                        <!-- Uploaded videos will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Tournament TV Section -->
+                <section id="tournament-tv" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-tv"></i> Tournament TV Playlist</h2>
+                        <button class="btn btn-primary" onclick="openTournamentVideoModal()">
+                            Add Video to Playlist
+                        </button>
+                    </div>
+                    
+                    <!-- Current Playing Section -->
+                    <div class="video-content video-content-section">
+                        <h3>🔴 Currently Playing</h3>
+                        <div class="current-video" id="currentTournamentVideo">
+                            <div class="video-thumbnail-container" onclick="playCurrentTournamentVideo()">
+                                <div class="video-thumbnail">
+                                    <img id="currentTournamentThumbnail" src="" alt="Current Video" class="current-tournament-thumbnail">
+                                    <div class="play-button">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="video-duration-badge">LIVE</div>
+                                </div>
+                            </div>
+                            <div class="video-info video-info-center">
+                                <div class="video-title video-title-main" id="currentTournamentTitle">Loading current video...</div>
+                                <div class="video-description video-description-text" id="currentTournamentDescription">Tournament live stream</div>
+                                <div class="video-meta video-meta-info">
+                                    <span>🔴 LIVE</span> • <span id="currentTournamentType">YouTube</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="video-info-box secondary">
+                        <small><i class="fas fa-info-circle"></i> Videos are randomly selected from this playlist for the live tournament stream. Manage the tournament TV playlist content here.</small>
+                    </div>
+                    
+                    <div id="tournamentPlaylist" class="video-history">
+                        <h3>Tournament TV Playlist</h3>
+                        <div id="tournamentPlaylistContainer">
+                            <!-- Tournament playlist videos will be loaded here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Daily Games Section -->
+                <section id="games" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-gamepad"></i> Daily Games Management</h2>
+                        <button class="btn btn-primary" onclick="openGameModal()">
+                            Add Game
+                        </button>
+                    </div>
+                    <div class="games-management">
+                        <div class="games-list-section">
+                            <h3>Games Pool</h3>
+                            <div class="info-box">
+                                <i class="fas fa-info-circle"></i>
+                                <span>System randomly selects 3 active games for daily display. Add games by selecting from existing images.</span>
+                            </div>
+                            <div id="gamesList" class="games-list">
+                                <!-- Games list will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Winner Board Section -->
+                <section id="winners" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-trophy"></i> Winner Board Management</h2>
+                        <button class="btn btn-primary" onclick="openWinnerModal()">
+                            Add Winner
+                        </button>
+                    </div>
+                    <div id="winnersTable" class="winners-table">
+                        <!-- Winners will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Jackpot Timer Section -->
+                <section id="jackpot" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-coins"></i> Jackpot Timer Management</h2>
+                        <button class="btn btn-primary" onclick="openJackpotModal()">
+                            Add Message
+                        </button>
+                    </div>
+                    <div class="jackpot-management">
+                        <div class="jackpot-config">
+                            <h3>Prediction Times Configuration</h3>
+                            <div class="prediction-times" id="predictionTimes">
+                                <!-- Prediction times will be loaded here -->
+                            </div>
+                        </div>
+                        <div class="jackpot-messages">
+                            <h3>Jackpot Messages</h3>
+                            <div id="jackpotMessagesTable" class="messages-table">
+                                <!-- Messages will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- OTP Requests Section -->
+                <section id="otp-requests" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-mobile-alt"></i> OTP Requests Logs</h2>
+                        <div class="otp-actions">
+                            <button class="btn btn-primary refresh-btn" onclick="refreshOTPLogs()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- OTP Statistics -->
+                    <div class="otp-stats" id="otpStats">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalRequests">-</h3>
+                                <p>Total Requests</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="todayRequests">-</h3>
+                                <p>Today's Requests</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="uniquePhones">-</h3>
+                                <p>Unique Numbers</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="lastRequestTime">-</h3>
+                                <p>Last Request</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- OTP Logs Controls -->
+                    <div class="otp-controls">
+                        <div class="pagination-controls">
+                            <label for="otpPageSize">Items per page:</label>
+                            <select id="otpPageSize" onchange="changeOTPPageSize(this.value)">
+                                <option value="10" selected>10</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div class="table-info">
+                            <span id="otpTableInfo">Loading...</span>
+                        </div>
+                    </div>
+
+                    <!-- OTP Logs Table -->
+                    <div class="otp-logs-container">
+                        <div class="table-wrapper">
+                            <table class="otp-table" id="otpTable">
+                                <thead>
+                                    <tr>
+                                        <th>Created Time</th>
+                                        <th>Phone Number</th>
+                                        <th>OTP Code</th>
+                                        <th>Action</th>
+                                        <th>Status</th>
+                                        <th>IP Address</th>
+                                        <th>User Agent</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="otpTableBody">
+                                    <tr>
+                                        <td colspan="7" class="loading-message">Loading OTP logs...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="otpPagination">
+                            <!-- Pagination controls will be added here -->
+                        </div>
+                    </div>
+                </section>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tournament TV Video Modal -->
+    <div id="tournamentVideoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Video to Tournament TV Playlist</h3>
+                <span class="close" onclick="closeTournamentVideoModal()">&times;</span>
+            </div>
+            
+            <!-- Video Type Tabs -->
+            <div class="video-tabs">
+                <button class="video-tab-btn active" data-type="youtube" onclick="switchTournamentVideoTab('youtube')">
+                    <i class="fab fa-youtube"></i> YouTube URL
+                </button>
+                <button class="video-tab-btn" data-type="stream" onclick="switchTournamentVideoTab('stream')">
+                    <i class="fas fa-broadcast-tower"></i> Live Stream
+                </button>
+            </div>
+            
+            <!-- YouTube Form -->
+            <form id="tournamentYoutubeForm" class="video-form active">
+                <div class="form-group">
+                    <label for="tournamentYoutubeUrl">YouTube Video URL</label>
+                    <input type="url" id="tournamentYoutubeUrl" name="videoUrl" 
+                           placeholder="https://www.youtube.com/watch?v=..." required>
+                    <small class="form-help">Paste the YouTube video URL for tournament highlights</small>
+                </div>
+                <div class="form-group">
+                    <label for="tournamentVideoTitle">Display Title</label>
+                    <input type="text" id="tournamentVideoTitle" name="title" maxlength="200" 
+                           placeholder="Tournament Highlights - Amazing Wins">
+                </div>
+                <div class="form-group">
+                    <label for="tournamentVideoDescription">Description</label>
+                    <textarea id="tournamentVideoDescription" name="description" maxlength="500" rows="3"
+                              placeholder="Epic tournament moments and big wins"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeTournamentVideoModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add to Playlist
+                    </button>
+                </div>
+            </form>
+
+            <!-- Live Stream Form -->
+            <form id="tournamentStreamForm" class="video-form">
+                <div class="form-group">
+                    <label for="tournamentStreamUrl">Live Stream URL</label>
+                    <input type="url" id="tournamentStreamUrl" name="streamUrl" 
+                           placeholder="https://www.twitch.tv/... or https://www.youtube.com/watch?v=...">
+                    <small class="form-help">Twitch, YouTube Live, or other streaming platform URL</small>
+                </div>
+                <div class="form-group">
+                    <label for="tournamentStreamTitle">Stream Title</label>
+                    <input type="text" id="tournamentStreamTitle" name="title" maxlength="200" 
+                           placeholder="Live Tournament Stream">
+                </div>
+                <div class="form-group">
+                    <label for="tournamentStreamDescription">Description</label>
+                    <textarea id="tournamentStreamDescription" name="description" maxlength="500" rows="3"
+                              placeholder="Live tournament action"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeTournamentVideoModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-broadcast-tower"></i> Add Stream
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Banner Modal -->
+    <div id="bannerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add/Edit Banner</h3>
+                <span class="close" onclick="closeBannerModal()">&times;</span>
+            </div>
+            <form id="bannerForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="bannerTitle">Title (Optional)</label>
+                    <input type="text" id="bannerTitle" name="title" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label for="bannerFile">Image File</label>
+                    <input type="file" id="bannerFile" name="banner" accept="image/jpeg,image/png,image/webp" required>
+                    <small>Supported formats: JPG, PNG, WebP (Max 5MB)</small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeBannerModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload Banner</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Comment Modal -->
+    <div id="commentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add/Edit Comment</h3>
+                <span class="close" onclick="closeCommentModal()">&times;</span>
+            </div>
+            <form id="commentForm">
+                <input type="hidden" id="commentId" name="id">
+                <div class="form-group">
+                    <label for="commentUsername">Username</label>
+                    <input type="text" id="commentUsername" name="username" maxlength="50" required>
+                </div>
+                <div class="form-group">
+                    <label for="commentText">Comment</label>
+                    <textarea id="commentText" name="comment" maxlength="500" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="commentAvatar">Avatar (Emoji)</label>
+                    <input type="text" id="commentAvatar" name="avatar" maxlength="10" placeholder="🎮" value="🎮">
+                </div>
+                <div class="form-group">
+                    <label for="commentTimestamp">Timestamp</label>
+                    <select id="commentTimestamp" name="timestamp">
+                        <option value="">Auto-generate</option>
+                        <option value="2 mins ago">2 mins ago</option>
+                        <option value="5 mins ago">5 mins ago</option>
+                        <option value="10 mins ago">10 mins ago</option>
+                        <option value="15 mins ago">15 mins ago</option>
+                        <option value="30 mins ago">30 mins ago</option>
+                        <option value="1 hour ago">1 hour ago</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeCommentModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Comment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add/Update Video</h3>
+                <span class="close" onclick="closeVideoModal()">&times;</span>
+            </div>
+            <div class="video-tabs">
+                <button class="video-tab-btn active" data-type="youtube">YouTube URL</button>
+                <button class="video-tab-btn" data-type="upload">Upload MP4</button>
+            </div>
+            
+            <!-- YouTube URL Form -->
+            <form id="videoUrlForm" class="video-form active">
+                <div class="form-group">
+                    <label for="videoUrl">YouTube URL</label>
+                    <input type="url" id="videoUrl" name="videoUrl" placeholder="https://www.youtube.com/watch?v=..." required>
+                </div>
+                <div class="form-group">
+                    <label for="videoUrlTitle">Title (Optional)</label>
+                    <input type="text" id="videoUrlTitle" name="title" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label for="videoUrlDescription">Description (Optional)</label>
+                    <textarea id="videoUrlDescription" name="description" maxlength="500" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeVideoModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Video URL</button>
+                </div>
+            </form>
+
+            <!-- Video Upload Form -->
+            <form id="videoUploadForm" class="video-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="videoFile">Video File</label>
+                    <input type="file" id="videoFile" name="video" accept="video/mp4,video/webm,video/ogg" required>
+                    <small>Supported formats: MP4, WebM, OGG (Max 100MB)</small>
+                </div>
+                <div class="form-group">
+                    <label for="videoUploadTitle">Title (Optional)</label>
+                    <input type="text" id="videoUploadTitle" name="title" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label for="videoUploadDescription">Description (Optional)</label>
+                    <textarea id="videoUploadDescription" name="description" maxlength="500" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeVideoModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload Video</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Winner Modal -->
+    <div id="winnerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add/Edit Winner</h3>
+                <span class="close" onclick="closeWinnerModal()">&times;</span>
+            </div>
+            <form id="winnerForm">
+                <input type="hidden" id="winnerId" name="id">
+                <div class="form-group">
+                    <label for="winnerUsername">Username</label>
+                    <input type="text" id="winnerUsername" name="username" maxlength="50" placeholder="Lucky****2" required>
+                </div>
+                <div class="form-group">
+                    <label for="winnerGame">Game Name</label>
+                    <input type="text" id="winnerGame" name="game" maxlength="100" placeholder="Jili Boxing King" required>
+                </div>
+                <div class="form-group">
+                    <label for="winnerBetAmount">Bet Amount (₹)</label>
+                    <input type="number" id="winnerBetAmount" name="betAmount" min="1" placeholder="500" required>
+                </div>
+                <div class="form-group">
+                    <label for="winnerWinAmount">Win Amount (₹)</label>
+                    <input type="number" id="winnerWinAmount" name="winAmount" min="1" placeholder="24000" required>
+                </div>
+                <div class="form-group">
+                    <label for="winnerMultiplier">Multiplier</label>
+                    <input type="text" id="winnerMultiplier" name="multiplier" placeholder="48x" required>
+                </div>
+                <div class="form-group">
+                    <label for="winnerQuote">Quote</label>
+                    <textarea id="winnerQuote" name="quote" maxlength="200" placeholder="Bhai full paisa vasool ho gaya aaj!" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="winnerAvatar">Avatar</label>
+                    <select id="winnerAvatar" name="avatar" required>
+                        <option value="👑">👑 Crown</option>
+                        <option value="💎">💎 Diamond</option>
+                        <option value="🔥">🔥 Fire</option>
+                        <option value="⭐">⭐ Star</option>
+                        <option value="🎰">🎰 Slot Machine</option>
+                        <option value="💰">💰 Money Bag</option>
+                        <option value="🏆">🏆 Trophy</option>
+                        <option value="⚡">⚡ Lightning</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeWinnerModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Winner</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Jackpot Message Modal -->
+    <div id="jackpotModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add/Edit Jackpot Message</h3>
+                <span class="close" onclick="closeJackpotModal()">&times;</span>
+            </div>
+            <form id="jackpotForm">
+                <input type="hidden" id="jackpotId" name="id">
+                <div class="form-group">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                        <label for="jackpotMessage">Prediction Message</label>
+                        <button type="button" class="btn btn-secondary btn-sm ai-generate-btn" onclick="autoGenerateMessage()">
+                            Auto Generate Message
+                        </button>
+                    </div>
+                    <textarea id="jackpotMessage" name="message" maxlength="200" rows="3" required 
+                              placeholder="Aaj 9:30PM se 10:00PM tak Dragon Tiger mein bonus rate double hoga!"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="jackpotCategory">Game Category</label>
+                    <select id="jackpotCategory" name="category">
+                        <option value="Dragon Tiger">Dragon Tiger</option>
+                        <option value="BNG Slot">BNG Slot</option>
+                        <option value="Fishing Games">Fishing Games</option>
+                        <option value="Crazy Time">Crazy Time</option>
+                        <option value="PG Slots">PG Slots</option>
+                        <option value="Jili Games">Jili Games</option>
+                        <option value="Live Casino">Live Casino</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="jackpotTime">Prediction Time (IST)</label>
+                    <select id="jackpotTime" name="predictionTime" required>
+                        <option value="">Select prediction time</option>
+                        <option value="2:00">2:00 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="17:00">5:00 PM</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeJackpotModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Message</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Game Modal -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content game-modal-content">
+            <div class="modal-header">
+                <h3>Add/Edit Game</h3>
+                <span class="close" onclick="closeGameModal()">&times;</span>
+            </div>
+            <form id="gameForm">
+                <input type="hidden" id="gameId" name="id">
+                <input type="hidden" id="selectedImage" name="selectedImage" required>
+                <div class="form-group">
+                    <label for="gameTitle">Game Title</label>
+                    <input type="text" id="gameTitle" name="title" maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="imageGallery">Select Game Image</label>
+                    <div id="imageGallery" class="image-gallery">
+                        <!-- Image gallery will be loaded here -->
+                    </div>
+                    <div class="selected-image-preview" id="selectedImagePreview">
+                        <strong>Selected:</strong> <span id="selectedImageName"></span>
+                        <img id="selectedImageImg">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <h4>Recent Win Information (Optional)</h4>
+                    
+                    <!-- Auto-generate controls -->
+                    <div class="auto-generate-section">
+                        <h5 class="auto-generate-title">
+                            <i class="fas fa-magic"></i> Auto-Generate Options
+                        </h5>
+                        <div class="auto-generate-checkboxes">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoAmount" onchange="toggleAutoGenerate('amount')">
+                                <span class="checkbox-text">Auto Amount (₹3,000-₹40,000)</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoPlayer" onchange="toggleAutoGenerate('player')">
+                                <span class="checkbox-text">Auto Player Name</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoComment" onchange="toggleAutoGenerate('comment')">
+                                <span class="checkbox-text">Auto Comment</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="winAmount">Win Amount</label>
+                            <input type="text" id="winAmount" name="winAmount" placeholder="₹15,420">
+                        </div>
+                        <div class="form-group">
+                            <label for="winPlayer">Player Name</label>
+                            <input type="text" id="winPlayer" name="winPlayer" placeholder="Lucky***Player">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="winComment">Win Comment</label>
+                        <textarea id="winComment" name="winComment" maxlength="300" rows="3"
+                                  placeholder="Amazing game! Just won big!"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeGameModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Game</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Custom Calendar Modal -->
+    <div id="calendarModal" class="calendar-modal">
+        <div class="calendar-modal-content">
+            <div class="calendar-header">
+                <button class="calendar-nav-btn" id="prevMonth">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="calendar-title">
+                    <span id="currentMonth">January</span>
+                    <span id="currentYear">2024</span>
+                </div>
+                <button class="calendar-nav-btn" id="nextMonth">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="calendar-weekdays">
+                <div class="weekday">Sun</div>
+                <div class="weekday">Mon</div>
+                <div class="weekday">Tue</div>
+                <div class="weekday">Wed</div>
+                <div class="weekday">Thu</div>
+                <div class="weekday">Fri</div>
+                <div class="weekday">Sat</div>
+            </div>
+            <div class="calendar-days" id="calendarDays">
+                <!-- Days will be generated by JavaScript -->
+            </div>
+            <div class="calendar-footer">
+                <button class="btn btn-secondary" onclick="closeCalendar()">Cancel</button>
+                <button class="btn btn-primary" onclick="selectCurrentDate()">Today</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

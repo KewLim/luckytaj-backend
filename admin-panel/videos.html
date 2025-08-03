@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Management - LuckyTaj Admin</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="videos.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <img src="https://www.luckytaj.com/luckytaj/img/logo.png" alt="LuckyTaj" class="logo">
+                    <h2>Video Management</h2>
+                    <p class="subtitle">Admin Authentication Required</p>
+                </div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-login btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </form>
+                <div id="loginError" class="error-message" style="display: none;"></div>
+                <div class="login-footer">
+                    <a href="/admin" class="back-link">
+                        <i class="fas fa-arrow-left"></i> Back to Main Admin Panel
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Management Dashboard -->
+        <div id="dashboard" class="dashboard" style="display: none;">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <img src="https://www.luckytaj.com/luckytaj/img/logo.png" alt="LuckyTaj" class="logo-small">
+                    <h1>Video Management</h1>
+                </div>
+                <div class="header-right">
+                    <a href="/admin" class="btn btn-secondary" style="margin-right: 10px;">
+                        <i class="fas fa-arrow-left"></i> Main Panel
+                    </a>
+                    <span id="adminEmail" class="admin-email"></span>
+                    <button id="logoutBtn" class="btn btn-secondary">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <div class="video-management-main">
+                <div class="content-header">
+                    <div class="page-title">
+                        <h2><i class="fas fa-video"></i> Homepage Video Content</h2>
+                        <p class="page-description">Manage videos displayed on the main landing page</p>
+                    </div>
+                    <div class="content-actions">
+                        <button class="btn btn-primary" onclick="openAddVideoModal()">
+                            <i class="fas fa-plus"></i> Add Video
+                        </button>
+                        <button class="btn btn-secondary refresh-btn" onclick="loadVideos()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Video Stats Cards -->
+                <div class="video-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalVideos">-</h3>
+                            <p>Total Videos</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon active">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="activeVideos">-</h3>
+                            <p>Active Videos</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon youtube">
+                            <i class="fab fa-youtube"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="youtubeVideos">-</h3>
+                            <p>YouTube Videos</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon upload">
+                            <i class="fas fa-upload"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="uploadedVideos">-</h3>
+                            <p>Uploaded Videos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video List -->
+                <div class="video-list-section">
+                    <div class="section-header">
+                        <h3>Video Library</h3>
+                        <div class="section-filters">
+                            <select id="filterType" onchange="filterVideos()">
+                                <option value="all">All Types</option>
+                                <option value="youtube">YouTube</option>
+                                <option value="mp4">Uploaded MP4</option>
+                            </select>
+                            <select id="filterStatus" onchange="filterVideos()">
+                                <option value="all">All Status</option>
+                                <option value="active">Active Only</option>
+                                <option value="inactive">Inactive Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="videoList" class="video-grid">
+                        <!-- Video cards will be loaded here -->
+                        <div class="loading-message">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Loading videos...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Video Modal -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content video-modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add New Video</h3>
+                <span class="close" onclick="closeVideoModal()">&times;</span>
+            </div>
+            
+            <!-- Video Type Tabs -->
+            <div class="video-tabs">
+                <button class="video-tab-btn active" data-type="youtube" onclick="switchVideoTab('youtube')">
+                    <i class="fab fa-youtube"></i> YouTube URL
+                </button>
+                <button class="video-tab-btn" data-type="upload" onclick="switchVideoTab('upload')">
+                    <i class="fas fa-upload"></i> Upload MP4
+                </button>
+            </div>
+            
+            <!-- YouTube URL Form -->
+            <form id="youtubeForm" class="video-form active">
+                <input type="hidden" id="editVideoId" name="videoId">
+                <div class="form-group">
+                    <label for="youtubeUrl">YouTube URL</label>
+                    <input type="url" id="youtubeUrl" name="videoUrl" 
+                           placeholder="https://www.youtube.com/watch?v=..." required>
+                    <small class="form-help">Paste the full YouTube video URL</small>
+                </div>
+                <div class="form-group">
+                    <label for="videoTitle">Video Title</label>
+                    <input type="text" id="videoTitle" name="title" maxlength="200" 
+                           placeholder="Enter a descriptive title">
+                </div>
+                <div class="form-group">
+                    <label for="videoDescription">Description</label>
+                    <textarea id="videoDescription" name="description" maxlength="500" rows="3"
+                              placeholder="Describe what viewers will see in this video"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="isActive" name="isActive" checked>
+                        <span class="checkmark"></span>
+                        Active (show on homepage)
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeVideoModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Video
+                    </button>
+                </div>
+            </form>
+
+            <!-- Video Upload Form -->
+            <form id="uploadForm" class="video-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="videoFile">Video File</label>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input type="file" id="videoFile" name="video" 
+                               accept="video/mp4,video/webm,video/ogg" required>
+                        <div class="file-upload-content">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to select video file or drag and drop</p>
+                            <small>Supported: MP4, WebM, OGG (Max 100MB)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="uploadTitle">Video Title</label>
+                    <input type="text" id="uploadTitle" name="title" maxlength="200" 
+                           placeholder="Enter a descriptive title">
+                </div>
+                <div class="form-group">
+                    <label for="uploadDescription">Description</label>
+                    <textarea id="uploadDescription" name="description" maxlength="500" rows="3"
+                              placeholder="Describe what viewers will see in this video"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="uploadActive" name="isActive" checked>
+                        <span class="checkmark"></span>
+                        Active (show on homepage)
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeVideoModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload Video
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h3>Confirm Delete</h3>
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this video?</p>
+                <p class="delete-warning">This action cannot be undone.</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">Cancel</button>
+                <button type="button" onclick="confirmDelete()" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <script src="videos.js"></script>
+</body>
+</html>
