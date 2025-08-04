@@ -33,19 +33,72 @@ class AdminPanel {
 
     setupEventListeners() {
         // Login form
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.clearLoginErrors();
-            this.handleLogin();
-        });
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.clearLoginErrors();
+                this.handleLogin();
+            });
+        }
         
         // Clear errors when typing in email/password fields
-        document.getElementById('email').addEventListener('input', () => {
-            this.clearLoginErrors();
+        const emailField = document.getElementById('email');
+        const passwordField = document.getElementById('password');
+        
+        if (emailField) {
+            emailField.addEventListener('input', () => {
+                this.clearLoginErrors();
+            });
+            
+            // Mobile-specific: prevent zoom on focus
+            emailField.addEventListener('focus', () => {
+                if (this.isMobile()) {
+                    emailField.setAttribute('autocomplete', 'email');
+                    emailField.setAttribute('inputmode', 'email');
+                }
+            });
+        }
+        
+        if (passwordField) {
+            passwordField.addEventListener('input', () => {
+                this.clearLoginErrors();
+            });
+            
+            // Mobile-specific: prevent zoom and improve UX
+            passwordField.addEventListener('focus', () => {
+                if (this.isMobile()) {
+                    passwordField.setAttribute('autocomplete', 'current-password');
+                }
+            });
+        }
+        
+        // Add mobile-specific touch optimizations
+        if (this.isMobile()) {
+            this.setupMobileTouchHandling();
+        }
+    }
+    
+    isMobile() {
+        return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    setupMobileTouchHandling() {
+        // Prevent double-tap zoom on buttons
+        const buttons = document.querySelectorAll('button, .btn');
+        buttons.forEach(button => {
+            button.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.target.click();
+            });
         });
         
-        document.getElementById('password').addEventListener('input', () => {
-            this.clearLoginErrors();
+        // Improve form input handling on mobile
+        const inputs = document.querySelectorAll('input[type="email"], input[type="password"]');
+        inputs.forEach(input => {
+            input.addEventListener('touchstart', () => {
+                input.focus();
+            });
         });
     }
 
@@ -265,32 +318,52 @@ class AdminPanel {
     }
 
     async showDashboard() {
-        document.getElementById('loginScreen').classList.add('d-none');
-        document.getElementById('dashboard').classList.remove('d-none');
-        document.getElementById('dashboard').classList.add('d-block');
+        console.log('Starting dashboard display...');
         
-        // Setup dashboard event listeners after elements are visible
-        this.setupDashboardEventListeners();
+        const loginScreen = document.getElementById('loginScreen');
+        const dashboard = document.getElementById('dashboard');
         
-        // Initialize theme toggle
-        this.initThemeToggle();
-        
-        // Start India time display
-        this.startIndiaTimeDisplay();
-        
-        // Load admin info
-        const adminInfo = await this.getAdminInfo();
-        if (adminInfo) {
-            this.loadAdminInfo(adminInfo.admin);
+        if (!loginScreen || !dashboard) {
+            console.error('Missing required dashboard elements:', { loginScreen: !!loginScreen, dashboard: !!dashboard });
+            return;
         }
-
-        // Load initial data
-        await this.loadMetrics();
-        await this.loadComments();
-        await this.loadVideos();
         
-        // Start real-time metrics updates
-        this.startRealTimeUpdates();
+        loginScreen.classList.add('d-none');
+        dashboard.classList.remove('d-none');
+        dashboard.classList.add('d-block');
+        
+        console.log('Dashboard elements switched successfully');
+        
+        try {
+            // Setup dashboard event listeners after elements are visible
+            this.setupDashboardEventListeners();
+            console.log('Dashboard event listeners setup complete');
+            
+            // Initialize theme toggle
+            this.initThemeToggle();
+            
+            // Start India time display
+            this.startIndiaTimeDisplay();
+            
+            // Load admin info
+            const adminInfo = await this.getAdminInfo();
+            if (adminInfo) {
+                this.loadAdminInfo(adminInfo.admin);
+                console.log('Admin info loaded successfully');
+            }
+
+            // Load initial data
+            console.log('Loading initial dashboard data...');
+            await this.loadMetrics();
+            await this.loadComments();
+            await this.loadVideos();
+            
+            // Start real-time metrics updates
+            this.startRealTimeUpdates();
+            console.log('Dashboard fully loaded and real-time updates started');
+        } catch (error) {
+            console.error('Error during dashboard initialization:', error);
+        }
     }
 
     async getAdminInfo() {
