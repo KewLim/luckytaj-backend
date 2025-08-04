@@ -481,19 +481,6 @@ class AdminPanel {
     }
 
     async fetchMetricsOverview(days = 1) {
-        try {
-            // Try to fetch real-time data from port 3003
-            const frontendResponse = await fetch(`https://admin-panel-luckytaj.onrender.com/api/metrics/overview?days=${days}`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-            if (frontendResponse.ok) {
-                return await frontendResponse.json();
-            }
-        } catch (error) {
-            console.log('Frontend API not available, using admin API');
-        }
-        
-        // Fallback to admin API
         const response = await fetch(`${this.baseURL}/api/metrics/overview?days=${days}`, {
             headers: { 'Authorization': `Bearer ${this.token}` }
         });
@@ -501,19 +488,6 @@ class AdminPanel {
     }
 
     async fetchDeviceDistribution(days = 1) {
-        try {
-            // Try to fetch real-time data from port 3003
-            const frontendResponse = await fetch(`https://admin-panel-luckytaj.onrender.com/api/metrics/devices?days=${days}`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-            if (frontendResponse.ok) {
-                return await frontendResponse.json();
-            }
-        } catch (error) {
-            console.log('Frontend API not available, using admin API');
-        }
-        
-        // Fallback to admin API
         const response = await fetch(`${this.baseURL}/api/metrics/devices?days=${days}`, {
             headers: { 'Authorization': `Bearer ${this.token}` }
         });
@@ -523,19 +497,6 @@ class AdminPanel {
     async fetchTipPerformance(days = 1, search = '') {
         const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
         
-        try {
-            // Try to fetch real-time data from port 3003
-            const frontendResponse = await fetch(`https://admin-panel-luckytaj.onrender.com/api/metrics/tips?days=${days}${searchParam}`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-            if (frontendResponse.ok) {
-                return await frontendResponse.json();
-            }
-        } catch (error) {
-            console.log('Frontend API not available, using admin API');
-        }
-        
-        // Fallback to admin API
         const response = await fetch(`${this.baseURL}/api/metrics/tips?days=${days}${searchParam}`, {
             headers: { 'Authorization': `Bearer ${this.token}` }
         });
@@ -544,19 +505,6 @@ class AdminPanel {
 
 
     async fetchMetricsTrend(days = 7) {
-        try {
-            // Try to fetch real-time data from port 3003
-            const frontendResponse = await fetch(`https://admin-panel-luckytaj.onrender.com/api/metrics/trend?days=${days}`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-            if (frontendResponse.ok) {
-                return await frontendResponse.json();
-            }
-        } catch (error) {
-            console.log('Frontend API not available, using admin API');
-        }
-        
-        // Fallback to admin API
         const response = await fetch(`${this.baseURL}/api/metrics/trend?days=${days}`, {
             headers: { 'Authorization': `Bearer ${this.token}` }
         });
@@ -564,19 +512,6 @@ class AdminPanel {
     }
 
     async fetchLatestActivity(limit = 10) {
-        try {
-            // Try to fetch from port 3003 first
-            const frontendResponse = await fetch(`https://admin-panel-luckytaj.onrender.com/api/metrics?sort=latest&limit=${limit}`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-            if (frontendResponse.ok) {
-                return await frontendResponse.json();
-            }
-        } catch (error) {
-            console.log('Frontend API not available, using admin API');
-        }
-        
-        // Fallback to admin API
         const response = await fetch(`${this.baseURL}/api/metrics?sort=latest&limit=${limit}`, {
             headers: { 'Authorization': `Bearer ${this.token}` }
         });
