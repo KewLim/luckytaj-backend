@@ -24,7 +24,11 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' ? ['https://www.luckytaj.com'] : true,
+    origin: process.env.NODE_ENV === 'production' ? [
+        'https://www.luckytaj.com',
+        'https://luckytaj-backend.onrender.com',
+        'https://admin-panel-luckytaj.onrender.com'
+    ] : true,
     credentials: true
 }));
 

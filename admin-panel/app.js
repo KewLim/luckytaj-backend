@@ -521,9 +521,9 @@ class AdminPanel {
     }
 
     async fetchTipPerformance(days = 1, search = '') {
+        const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+        
         try {
-            const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-            
             // Try to fetch real-time data from port 3003
             const frontendResponse = await fetch(`https://admin-panel-luckytaj.onrender.com/api/metrics/tips?days=${days}${searchParam}`, {
                 headers: { 'Authorization': `Bearer ${this.token}` }
