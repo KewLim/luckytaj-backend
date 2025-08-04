@@ -439,10 +439,20 @@ router.delete('/cleanup', auth, async (req, res) => {
 async function readOTPLogs() {
     try {
         const otpLogsPath = path.join(__dirname, '..', 'otp-logs.json');
+        
+        // Check if file exists, if not create empty array file
+        try {
+            await fs.access(otpLogsPath);
+        } catch (fileNotFound) {
+            // File doesn't exist, create empty logs file
+            console.log('OTP logs file not found, creating empty file...');
+            await fs.writeFile(otpLogsPath, '[]', 'utf8');
+        }
+        
         const data = await fs.readFile(otpLogsPath, 'utf8');
         return JSON.parse(data);
     } catch (error) {
-        console.error('Error reading OTP logs:', error);
+        console.warn('Error reading OTP logs, using empty array:', error.message);
         return [];
     }
 }
