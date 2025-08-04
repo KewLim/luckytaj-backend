@@ -140,7 +140,13 @@ app.get('/', (req, res) => {
 
 // Health check
 app.get('/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV,
+        jwtConfigured: !!process.env.JWT_SECRET,
+        dbConfigured: !!process.env.MONGODB_URI
+    });
 });
 
 // 404 handler
