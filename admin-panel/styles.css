@@ -138,6 +138,13 @@ body {
     align-items: center;
     min-height: 100vh;
     padding: 20px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1000;
+    background: var(--bg);
 }
 
 .login-card {
@@ -176,6 +183,8 @@ body {
     background: #f5f7fa;
     display: flex;
     flex-direction: column;
+    position: relative;
+    width: 100%;
 }
 
 .dashboard-header {

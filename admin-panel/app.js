@@ -335,10 +335,16 @@ class AdminPanel {
     }
 
     showLogin() {
-        document.getElementById('loginScreen').classList.remove('d-none');
-        document.getElementById('loginScreen').classList.add('d-flex');
-        document.getElementById('dashboard').classList.remove('d-block');
-        document.getElementById('dashboard').classList.add('d-none');
+        const loginScreen = document.getElementById('loginScreen');
+        const dashboard = document.getElementById('dashboard');
+        
+        // Remove all display classes and set proper states
+        loginScreen.classList.remove('d-none', 'd-flex');
+        loginScreen.classList.add('d-flex');
+        
+        dashboard.classList.remove('d-block', 'd-flex');
+        dashboard.classList.add('d-none');
+        
         document.getElementById('loginError').classList.add('d-none');
         document.getElementById('loginForm').reset();
     }
@@ -354,8 +360,12 @@ class AdminPanel {
             return;
         }
         
+        // Properly hide login screen - remove all display classes first
+        loginScreen.classList.remove('d-flex', 'd-block');
         loginScreen.classList.add('d-none');
-        dashboard.classList.remove('d-none');
+        
+        // Properly show dashboard
+        dashboard.classList.remove('d-none', 'd-flex');
         dashboard.classList.add('d-block');
         
         console.log('Dashboard elements switched successfully');
