@@ -19,6 +19,12 @@ class AdminPanel {
         if (this.token) {
             const isValid = await this.verifyToken();
             if (isValid) {
+                // Check if we're on a specific admin page (not login page)
+                if (window.location.pathname !== '/admin') {
+                    // We're on an admin page, just initialize without showing login/dashboard
+                    this.initAdminPage();
+                    return;
+                }
                 this.showDashboard();
                 return;
             } else {
@@ -27,8 +33,28 @@ class AdminPanel {
             }
         }
         
+        // If no token or invalid token, redirect to login
+        if (window.location.pathname !== '/admin') {
+            window.location.href = '/admin';
+            return;
+        }
+        
         this.showLogin();
         this.setupEventListeners();
+    }
+
+    initAdminPage() {
+        // Initialize common admin page features without showing login/dashboard
+        this.initThemeToggle();
+        this.startIndiaTimeDisplay();
+        
+        // Setup logout functionality if logout button exists
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                this.handleLogout();
+            });
+        }
     }
 
     setupEventListeners() {
@@ -2898,7 +2924,9 @@ let otpLogsPerPage = 10;
 
 async function loadOTPLogs(page = 1) {
     try {
-        const response = await fetch(`/api/otp/logs?page=${page}&limit=${otpLogsPerPage}`);
+        const response = await fetch(`${adminPanel.baseURL}/api/otp/logs?page=${page}&limit=${otpLogsPerPage}`, {
+            headers: { 'Authorization': `Bearer ${adminPanel.token}` }
+        });
         const data = await response.json();
         
         if (data.success) {
@@ -2922,7 +2950,9 @@ async function loadOTPLogs(page = 1) {
 
 async function loadOTPStats() {
     try {
-        const response = await fetch('/api/otp/stats');
+        const response = await fetch(`${adminPanel.baseURL}/api/otp/stats`, {
+            headers: { 'Authorization': `Bearer ${adminPanel.token}` }
+        });
         const data = await response.json();
         
         if (data.success) {

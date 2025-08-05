@@ -115,15 +115,6 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin-panel', 'index.html'));
 });
 
-// Serve admin video management page
-app.get('/admin/videos', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin-panel', 'videos.html'));
-});
-
-// Serve tournament TV management page
-app.get('/admin/tournament-tv', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin-panel', 'tournament-tv.html'));
-});
 
 // Backend API root endpoint
 app.get('/', (req, res) => {
