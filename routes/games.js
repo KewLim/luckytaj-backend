@@ -123,6 +123,50 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// Refresh games pool - force new random selection (admin endpoint)
+router.post('/refresh', authMiddleware, async (req, res) => {
+    try {
+        const activeGames = await Game.find({ active: true });
+        console.log('Games refresh triggered - Active games found:', activeGames.length);
+        
+        if (activeGames.length === 0) {
+            return res.status(400).json({ 
+                error: 'No active games found. Please add games through admin panel first.',
+                success: false
+            });
+        }
+
+        // Update GameConfig with new refresh timestamp
+        let gameConfig = await GameConfig.findOne();
+        if (!gameConfig) {
+            gameConfig = new GameConfig({
+                totalGames: 3,
+                refreshTime: '02:00',
+                createdBy: req.admin.id
+            });
+        }
+        
+        // Set last refresh time to now
+        gameConfig.lastRefresh = new Date();
+        await gameConfig.save();
+
+        // Return success response with current stats
+        res.json({
+            message: 'Games pool refreshed successfully',
+            success: true,
+            totalActiveGames: activeGames.length,
+            lastRefresh: gameConfig.lastRefresh,
+            nextRefresh: gameConfig.refreshTime
+        });
+    } catch (error) {
+        console.error('Error refreshing games:', error);
+        res.status(500).json({ 
+            error: 'Failed to refresh games pool',
+            success: false
+        });
+    }
+});
+
 // Get 3 random active games for frontend (public endpoint)
 router.get('/daily', async (req, res) => {
     try {
