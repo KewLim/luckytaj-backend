@@ -26,6 +26,7 @@ app.use(helmet());
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' ? [
         'https://www.luckytaj.com',
+        'https://luckytaj.space',
         'https://luckytaj-backend.onrender.com',
         'https://admin-panel-luckytaj.onrender.com'
     ] : true,
