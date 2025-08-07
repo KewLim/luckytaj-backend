@@ -62,6 +62,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Serve game images
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
 // Serve favicon files
 app.use('/luckytaj-favicon', express.static(path.join(__dirname, 'luckytaj-favicon')));
 app.use('/favicon', express.static(path.join(__dirname, 'favicon')));
