@@ -2,9 +2,69 @@ const express = require('express');
 const router = express.Router();
 const GameConfig = require('../models/GameConfig');
 const Game = require('../models/Game');
+const DailyGames = require('../models/DailyGames');
 const authMiddleware = require('../middleware/auth');
 const fs = require('fs').promises;
 const path = require('path');
+const { manualRefresh } = require('../services/dailyRefresh');
+
+// Helper function to get today's date in IST timezone as string (YYYY-MM-DD)
+function getTodayIST() {
+    const now = new Date();
+    // Convert to IST (UTC+5:30)
+    const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    return istTime.toISOString().split('T')[0];
+}
+
+// Helper function to select and cache daily games
+async function selectDailyGames() {
+    try {
+        const today = getTodayIST();
+        
+        // Check if we already have games selected for today
+        let todayGames = await DailyGames.findOne({ date: today });
+        
+        if (todayGames) {
+            console.log('Daily games already selected for', today);
+            return todayGames;
+        }
+        
+        // Select new games for today
+        const activeGames = await Game.find({ active: true });
+        
+        if (activeGames.length === 0) {
+            console.log('No active games available for daily selection');
+            return null;
+        }
+        
+        // Randomly select 3 games
+        const shuffledGames = activeGames.sort(() => 0.5 - Math.random());
+        const selectedGames = shuffledGames.slice(0, Math.min(3, activeGames.length));
+        
+        // Format selected games
+        const formattedGames = selectedGames.map(game => ({
+            gameId: game._id,
+            title: game.title,
+            image: game.image,
+            recentWin: game.recentWin
+        }));
+        
+        // Save to database
+        todayGames = new DailyGames({
+            date: today,
+            selectedGames: formattedGames,
+            refreshedAt: new Date()
+        });
+        
+        await todayGames.save();
+        console.log('New daily games selected for', today, ':', formattedGames);
+        
+        return todayGames;
+    } catch (error) {
+        console.error('Error selecting daily games:', error);
+        return null;
+    }
+}
 
 // Get available images from images folder
 router.get('/images', authMiddleware, async (req, res) => {
@@ -123,11 +183,10 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-// Refresh games pool - force new random selection (admin endpoint)
+// Manual refresh daily games (admin endpoint) - triggers same logic as automatic refresh
 router.post('/refresh', authMiddleware, async (req, res) => {
     try {
         const activeGames = await Game.find({ active: true });
-        console.log('Games refresh triggered - Active games found:', activeGames.length);
         
         if (activeGames.length === 0) {
             return res.status(400).json({ 
@@ -136,30 +195,33 @@ router.post('/refresh', authMiddleware, async (req, res) => {
             });
         }
 
-        // Update GameConfig with new refresh timestamp
-        let gameConfig = await GameConfig.findOne();
-        if (!gameConfig) {
-            gameConfig = new GameConfig({
-                totalGames: 3,
-                refreshTime: '02:00',
-                createdBy: req.admin.id
+        // Use the same refresh logic as automatic scheduler
+        const refreshSuccess = await manualRefresh();
+        
+        if (!refreshSuccess) {
+            return res.status(500).json({
+                error: 'Failed to refresh daily games',
+                success: false
             });
         }
-        
-        // Set last refresh time to now
-        gameConfig.lastRefresh = new Date();
-        await gameConfig.save();
 
-        // Return success response with current stats
+        // Get the newly selected games
+        const today = getTodayIST();
+        const todayGames = await DailyGames.findOne({ date: today });
+        
+        const gameConfig = await GameConfig.findOne();
+
         res.json({
-            message: 'Games pool refreshed successfully',
+            message: 'Daily games refreshed successfully (manual trigger)',
             success: true,
             totalActiveGames: activeGames.length,
-            lastRefresh: gameConfig.lastRefresh,
-            nextRefresh: gameConfig.refreshTime
+            newGames: todayGames?.selectedGames.map(game => game.title) || [],
+            date: today,
+            lastRefresh: gameConfig?.lastRefresh || new Date(),
+            nextRefresh: gameConfig?.refreshTime || '02:00'
         });
     } catch (error) {
-        console.error('Error refreshing games:', error);
+        console.error('Error in manual refresh:', error);
         res.status(500).json({ 
             error: 'Failed to refresh games pool',
             success: false
@@ -167,23 +229,19 @@ router.post('/refresh', authMiddleware, async (req, res) => {
     }
 });
 
-// Get 3 random active games for frontend (public endpoint)
+// Get today's cached daily games for all players (public endpoint)
 router.get('/daily', async (req, res) => {
     try {
-        const activeGames = await Game.find({ active: true });
-        console.log('Daily games API - Active games found:', activeGames.length);
+        // Get or select today's games
+        const todayGames = await selectDailyGames();
         
-        if (activeGames.length === 0) {
-            console.log('No active games found in database. Please add games through admin panel.');
+        if (!todayGames || !todayGames.selectedGames || todayGames.selectedGames.length === 0) {
+            console.log('No daily games available. Database may be empty.');
             return res.json([]);
         }
         
-        // Randomly select 3 games from active games
-        const shuffledGames = activeGames.sort(() => 0.5 - Math.random());
-        const selectedGames = shuffledGames.slice(0, 3);
-        
         // Format for frontend compatibility
-        const formattedGames = selectedGames.map((game, index) => ({
+        const formattedGames = todayGames.selectedGames.map((game, index) => ({
             id: index + 1,
             title: game.title,
             image: `/images/${game.image}`,
@@ -191,6 +249,7 @@ router.get('/daily', async (req, res) => {
             recentWin: game.recentWin
         }));
         
+        console.log(`Daily games API - Serving ${formattedGames.length} cached games for ${todayGames.date}`);
         res.json(formattedGames);
     } catch (error) {
         console.error('Error fetching daily games:', error);

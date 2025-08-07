@@ -15,6 +15,7 @@ const winnersRoutes = require('./routes/winners');
 const jackpotRoutes = require('./routes/jackpot');
 const metricsRoutes = require('./routes/metrics');
 const otpRoutes = require('./routes/otp');
+const { startDailyRefreshScheduler } = require('./services/dailyRefresh');
 
 const app = express();
 
@@ -95,6 +96,9 @@ mongoose.connect(MONGO_URI, {
 .then(() => {
     console.log('✅ Connected to MongoDB');
     console.log('Database:', MONGO_URI.includes('mongodb.net') ? 'MongoDB Atlas (Cloud)' : 'Local MongoDB');
+    
+    // Start the daily games refresh scheduler
+    startDailyRefreshScheduler();
 })
 .catch((err) => {
     console.error('❌ MongoDB connection error:', err.message);
