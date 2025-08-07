@@ -496,6 +496,12 @@
                     <div class="videos-list" id="videosList">
                         <!-- Videos will be loaded here -->
                     </div>
+                    <div id="videoHistory" class="video-history-section">
+                        <h3>Video History</h3>
+                        <div class="video-history">
+                            <!-- Video history will be rendered here -->
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Tournament TV Section -->
@@ -507,7 +513,19 @@
                         </button>
                     </div>
                     <div class="tournament-tv-content" id="tournamentTVContent">
-                        <!-- Tournament TV content will be loaded here -->
+                        <div class="current-tournament">
+                            <h3>Current Tournament</h3>
+                            <div class="tournament-display">
+                                <img id="currentTournamentThumbnail" src="" alt="Tournament Thumbnail" style="width: 200px; height: auto;">
+                                <div class="tournament-info">
+                                    <h4 id="currentTournamentTitle">Tournament Title</h4>
+                                    <p id="currentTournamentDescription">Tournament Description</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tournamentPlaylistContainer">
+                            <!-- Tournament playlist will be loaded here -->
+                        </div>
                     </div>
                 </section>
                 </main>
