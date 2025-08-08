@@ -215,9 +215,24 @@ async function autoLinkVerifiedPhones() {
 // Get overview metrics
 router.get('/overview', auth, async (req, res) => {
     try {
-        const { days = 1 } = req.query;
-        const endDate = new Date();
-        const startDate = new Date(endDate.getTime() - (parseInt(days) * 24 * 60 * 60 * 1000));
+        const { 
+            days = 1, 
+            startDate: customStartDate,
+            endDate: customEndDate 
+        } = req.query;
+        
+        let startDate, endDate;
+        
+        // Use custom date range if provided, otherwise use days parameter
+        if (customStartDate && customEndDate) {
+            startDate = new Date(customStartDate);
+            endDate = new Date(customEndDate);
+            // Set endDate to end of day
+            endDate.setHours(23, 59, 59, 999);
+        } else {
+            endDate = new Date();
+            startDate = new Date(endDate.getTime() - (parseInt(days) * 24 * 60 * 60 * 1000));
+        }
         
         const [totalViews, clickThroughRate, avgTimeOnPage, verifiedPhones] = await Promise.all([
             UserInteraction.getTotalViews(startDate, endDate),
@@ -228,8 +243,9 @@ router.get('/overview', auth, async (req, res) => {
         
         const verifiedPhoneCount = verifiedPhones.size;
         
-        // Get previous period for comparison
-        const prevStartDate = new Date(startDate.getTime() - (parseInt(days) * 24 * 60 * 60 * 1000));
+        // Calculate previous period duration
+        const periodDuration = endDate.getTime() - startDate.getTime();
+        const prevStartDate = new Date(startDate.getTime() - periodDuration);
         const [prevViews, prevCTR, prevAvgTime] = await Promise.all([
             UserInteraction.getTotalViews(prevStartDate, startDate),
             UserInteraction.getClickThroughRate(prevStartDate, startDate),
@@ -261,6 +277,10 @@ router.get('/overview', auth, async (req, res) => {
             avgTimeOnPage: {
                 value: avgTimeOnPage,
                 change: calculateChange(avgTimeOnPage, prevAvgTime)
+            },
+            dateRange: {
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
             }
         });
     } catch (error) {
@@ -272,9 +292,24 @@ router.get('/overview', auth, async (req, res) => {
 // Get device distribution
 router.get('/devices', auth, async (req, res) => {
     try {
-        const { days = 1 } = req.query;
-        const endDate = new Date();
-        const startDate = new Date(endDate.getTime() - (parseInt(days) * 24 * 60 * 60 * 1000));
+        const { 
+            days = 1, 
+            startDate: customStartDate,
+            endDate: customEndDate 
+        } = req.query;
+        
+        let startDate, endDate;
+        
+        // Use custom date range if provided, otherwise use days parameter
+        if (customStartDate && customEndDate) {
+            startDate = new Date(customStartDate);
+            endDate = new Date(customEndDate);
+            // Set endDate to end of day
+            endDate.setHours(23, 59, 59, 999);
+        } else {
+            endDate = new Date();
+            startDate = new Date(endDate.getTime() - (parseInt(days) * 24 * 60 * 60 * 1000));
+        }
         
         const distribution = await UserInteraction.getDeviceDistribution(startDate, endDate);
         res.json(distribution);
@@ -287,9 +322,27 @@ router.get('/devices', auth, async (req, res) => {
 // Get tip performance
 router.get('/tips', auth, async (req, res) => {
     try {
-        const { days = 1, search = '' } = req.query;
-        const endDate = new Date();
-        const startDate = new Date(endDate.getTime() - (parseInt(days) * 24 * 60 * 60 * 1000));
+        const { 
+            days = 1, 
+            search = '', 
+            page = 1, 
+            limit = 10,
+            startDate: customStartDate,
+            endDate: customEndDate
+        } = req.query;
+        
+        let startDate, endDate;
+        
+        // Use custom date range if provided, otherwise use days parameter
+        if (customStartDate && customEndDate) {
+            startDate = new Date(customStartDate);
+            endDate = new Date(customEndDate);
+            // Set endDate to end of day
+            endDate.setHours(23, 59, 59, 999);
+        } else {
+            endDate = new Date();
+            startDate = new Date(endDate.getTime() - (parseInt(days) * 24 * 60 * 60 * 1000));
+        }
         
         // Ensure we have both verified and unverified examples
         await ensureMixedVerificationStatus();
@@ -316,7 +369,32 @@ router.get('/tips', auth, async (req, res) => {
             });
         }
         
-        res.json(performance);
+        // Calculate pagination
+        const currentPage = parseInt(page);
+        const itemsPerPage = parseInt(limit);
+        const totalItems = performance.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        
+        // Apply pagination
+        const paginatedPerformance = performance.slice(startIndex, endIndex);
+        
+        res.json({
+            data: paginatedPerformance,
+            pagination: {
+                currentPage,
+                totalPages,
+                totalItems,
+                itemsPerPage,
+                hasNextPage: currentPage < totalPages,
+                hasPrevPage: currentPage > 1
+            },
+            dateRange: {
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            }
+        });
     } catch (error) {
         console.error('Error getting tip performance:', error);
         res.status(500).json({ error: 'Failed to get tip performance' });

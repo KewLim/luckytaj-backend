@@ -8,7 +8,28 @@ class AdminPanel {
         this.charts = {};
         this.retryDelay = 1000; // Start with 1 second delay
         this.maxRetries = 3;
+        
+        // Tips table pagination
+        this.currentTipsPage = 1;
+        this.tipsPerPage = 10;
+        this.totalTipsPages = 1;
+        this.totalTipsItems = 0;
+        
+        // Date filtering
+        this.currentDateFilter = {
+            startDate: null,
+            endDate: null,
+            quickFilter: null
+        };
+        
         this.init();
+        
+        // Add window resize listener for responsive pagination
+        window.addEventListener('resize', () => {
+            if (this.totalTipsPages > 1) {
+                this.updatePaginationButtons();
+            }
+        });
     }
 
     async init() {
@@ -568,14 +589,19 @@ class AdminPanel {
     }
 
     // User Interaction Metrics Management
-    async loadMetrics(silent = false, search = '') {
+    async loadMetrics(silent = false, search = '', resetPagination = false) {
         try {
             if (!silent) this.showLoading();
+            
+            // Reset pagination if needed (e.g., when search or date filter changes)
+            if (resetPagination) {
+                this.currentTipsPage = 1;
+            }
             
             const [overview, devices, tips, trend] = await Promise.all([
                 this.fetchMetricsOverview(),
                 this.fetchDeviceDistribution(),
-                this.fetchTipPerformance(1, search),
+                this.fetchTipPerformance(search),
                 this.fetchMetricsTrend()
             ]);
             
@@ -589,24 +615,57 @@ class AdminPanel {
         }
     }
 
-    async fetchMetricsOverview(days = 1) {
-        const response = await fetch(`${this.baseURL}/api/metrics/overview?days=${days}`, {
-            headers: { 'Authorization': `Bearer ${this.token}` }
-        });
-        return response.ok ? await response.json() : null;
-    }
-
-    async fetchDeviceDistribution(days = 1) {
-        const response = await fetch(`${this.baseURL}/api/metrics/devices?days=${days}`, {
-            headers: { 'Authorization': `Bearer ${this.token}` }
-        });
-        return response.ok ? await response.json() : null;
-    }
-
-    async fetchTipPerformance(days = 1, search = '') {
-        const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+    async fetchMetricsOverview() {
+        let url = `${this.baseURL}/api/metrics/overview?`;
         
-        const response = await fetch(`${this.baseURL}/api/metrics/tips?days=${days}${searchParam}`, {
+        // Use date filter if set, otherwise default to 1 day
+        if (this.currentDateFilter.startDate && this.currentDateFilter.endDate) {
+            url += `startDate=${this.currentDateFilter.startDate}&endDate=${this.currentDateFilter.endDate}`;
+        } else {
+            url += `days=1`;
+        }
+        
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${this.token}` }
+        });
+        return response.ok ? await response.json() : null;
+    }
+
+    async fetchDeviceDistribution() {
+        let url = `${this.baseURL}/api/metrics/devices?`;
+        
+        // Use date filter if set, otherwise default to 1 day
+        if (this.currentDateFilter.startDate && this.currentDateFilter.endDate) {
+            url += `startDate=${this.currentDateFilter.startDate}&endDate=${this.currentDateFilter.endDate}`;
+        } else {
+            url += `days=1`;
+        }
+        
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${this.token}` }
+        });
+        return response.ok ? await response.json() : null;
+    }
+
+    async fetchTipPerformance(search = '') {
+        let url = `${this.baseURL}/api/metrics/tips?`;
+        
+        // Add pagination parameters
+        url += `page=${this.currentTipsPage}&limit=${this.tipsPerPage}`;
+        
+        // Add date filter if set
+        if (this.currentDateFilter.startDate && this.currentDateFilter.endDate) {
+            url += `&startDate=${this.currentDateFilter.startDate}&endDate=${this.currentDateFilter.endDate}`;
+        } else {
+            url += `&days=1`;
+        }
+        
+        // Add search parameter if provided
+        if (search) {
+            url += `&search=${encodeURIComponent(search)}`;
+        }
+        
+        const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${this.token}` }
         });
         return response.ok ? await response.json() : null;
@@ -734,7 +793,7 @@ class AdminPanel {
             // Debounce search requests
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                this.loadMetrics(true, searchValue);
+                this.loadMetrics(true, searchValue, true); // Reset pagination on search
             }, 300);
         });
 
@@ -743,14 +802,14 @@ class AdminPanel {
             searchInput.value = '';
             clearBtn.classList.add('d-none');
             clearBtn.classList.remove('show');
-            this.loadMetrics(true, '');
+            this.loadMetrics(true, '', true); // Reset pagination on clear search
         });
 
         // Handle Enter key
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 clearTimeout(searchTimeout);
-                this.loadMetrics(true, e.target.value.trim());
+                this.loadMetrics(true, e.target.value.trim(), true); // Reset pagination on search
             }
         });
     }
@@ -797,10 +856,15 @@ class AdminPanel {
             document.querySelector('.device-fill.desktop').style.setProperty('width', desktopPerc + '%');
         }
         
-        if (tips && tips.length > 0) {
+        if (tips && tips.data && tips.data.length > 0) {
+            // Update pagination info
+            this.totalTipsPages = tips.pagination.totalPages;
+            this.totalTipsItems = tips.pagination.totalItems;
+            this.currentTipsPage = tips.pagination.currentPage;
+            
             // Update tips performance table
             const tipsTableBody = document.getElementById('tipsTableBody');
-            tipsTableBody.innerHTML = tips.map(tip => {
+            tipsTableBody.innerHTML = tips.data.map(tip => {
                 const lastActivityTime = tip.lastActivityTime ? this.getTimeAgo(new Date(tip.lastActivityTime)) : 'No activity';
                 
                 // Display phone number if available, otherwise show shortened tip ID
@@ -825,29 +889,29 @@ class AdminPanel {
                     displayText = tip.tipId;
                 }
                 
-                // Debug log to see what data we're getting
-                console.log('Tip data:', { 
-                    tipId: tip.tipId, 
-                    displayId: tip.displayId, 
-                    isVerifiedPhone: tip.isVerifiedPhone,
-                    finalDisplay: displayText,
-                    isPhoneNumber: isPhoneNumber
-                });
-                
                 return `
                 <tr>
                     <td class="${isPhoneNumber ? 'verified-phone' : ''}" title="${isPhoneNumber ? 'Verified Phone Number' : 'Tip ID'}">
                         ${isPhoneNumber ? `<span>${displayText.replace(/^\+/, '')}<img src="../images/untitled%20folder/blue-tick.png" class="verified-icon" alt="Verified"></span>` : displayText.replace(/^\+/, '')}
                     </td>
-                    <td>${tip.views.toLocaleString()}</td>
-                    <td>${tip.uniqueVisitors || 'N/A'}</td>
-                    <td>${Math.round(tip.ctr)}%</td>
+                    <td>${tip.views ? tip.views.toLocaleString() : (tip.totalViews || 0).toLocaleString()}</td>
+                    <td>${tip.uniqueVisitors || tip.sessions || 'N/A'}</td>
+                    <td>${tip.ctr ? Math.round(tip.ctr) : (tip.avgClickRate ? Math.round(tip.avgClickRate * 100) : 0)}%</td>
                     <td>${tip.avgTimeSeconds || 0}s</td>
                     <td>${lastActivityTime}</td>
                 </tr>
             `}).join('');
+            
+            // Update pagination controls
+            this.updatePagination();
+        } else if (tips && tips.data && tips.data.length === 0) {
+            document.getElementById('tipsTableBody').innerHTML = '<tr><td colspan="6" class="no-data">No tip data available for selected date range</td></tr>';
+            // Update pagination info for empty results
+            document.getElementById('tableInfo').textContent = 'Showing 0 entries';
+            this.updatePagination();
         } else {
             document.getElementById('tipsTableBody').innerHTML = '<tr><td colspan="6" class="no-data">No tip data available yet</td></tr>';
+            this.updatePagination();
         }
     }
 
@@ -2737,6 +2801,127 @@ class AdminPanel {
         this.setTheme(newTheme);
     }
 
+    // Tips table pagination methods
+    updatePagination() {
+        const startItem = ((this.currentTipsPage - 1) * this.tipsPerPage) + 1;
+        const endItem = Math.min(this.currentTipsPage * this.tipsPerPage, this.totalTipsItems);
+        
+        // Update table info
+        const tableInfo = document.getElementById('tableInfo');
+        if (tableInfo) {
+            if (this.totalTipsItems === 0) {
+                tableInfo.textContent = 'Showing 0 entries';
+            } else {
+                tableInfo.textContent = `Showing ${startItem}-${endItem} of ${this.totalTipsItems} entries`;
+            }
+        }
+        
+        // Update page size selector
+        const pageSize = document.getElementById('pageSize');
+        if (pageSize) {
+            pageSize.value = this.tipsPerPage;
+        }
+        
+        // Update pagination buttons
+        this.updatePaginationButtons();
+    }
+    
+    updatePaginationButtons() {
+        const firstPageBtn = document.getElementById('firstPageBtn');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const lastPageBtn = document.getElementById('lastPageBtn');
+        const pageNumbers = document.getElementById('pageNumbers');
+        
+        if (!pageNumbers) return;
+        
+        // Disable/enable navigation buttons
+        if (firstPageBtn) firstPageBtn.disabled = this.currentTipsPage <= 1;
+        if (prevPageBtn) prevPageBtn.disabled = this.currentTipsPage <= 1;
+        if (nextPageBtn) nextPageBtn.disabled = this.currentTipsPage >= this.totalTipsPages;
+        if (lastPageBtn) lastPageBtn.disabled = this.currentTipsPage >= this.totalTipsPages;
+        
+        // Determine max visible pages based on screen size
+        const isMobile = window.innerWidth <= 768;
+        const maxVisible = isMobile ? 3 : 5;
+        
+        // Calculate page range
+        let startPage, endPage;
+        if (this.totalTipsPages <= maxVisible) {
+            // Show all pages if total is less than maxVisible
+            startPage = 1;
+            endPage = this.totalTipsPages;
+        } else {
+            // Center the current page
+            const halfVisible = Math.floor(maxVisible / 2);
+            startPage = Math.max(1, this.currentTipsPage - halfVisible);
+            endPage = Math.min(this.totalTipsPages, startPage + maxVisible - 1);
+            
+            // Adjust if we're at the end
+            if (endPage === this.totalTipsPages) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+        }
+        
+        let pageNumbersHTML = '';
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbersHTML += `
+                <button class="btn btn-outline pagination-btn page-number ${i === this.currentTipsPage ? 'active' : ''}" 
+                        onclick="goToPage(${i})" ${i === this.currentTipsPage ? 'disabled' : ''}>
+                    ${i}
+                </button>
+            `;
+        }
+        
+        pageNumbers.innerHTML = pageNumbersHTML;
+    }
+
+    // Date filtering methods
+    setDateFilter(startDate, endDate, quickFilter = null) {
+        this.currentDateFilter = {
+            startDate: startDate,
+            endDate: endDate,
+            quickFilter: quickFilter
+        };
+        
+        // Update date inputs
+        if (startDate && endDate) {
+            document.getElementById('startDate').value = this.formatDateForInput(startDate);
+            document.getElementById('endDate').value = this.formatDateForInput(endDate);
+            document.getElementById('startDateHidden').value = startDate;
+            document.getElementById('endDateHidden').value = endDate;
+        }
+        
+        // Refresh data with new date filter
+        this.loadMetrics(false, '', true);
+    }
+    
+    clearDateFilter() {
+        this.currentDateFilter = {
+            startDate: null,
+            endDate: null,
+            quickFilter: null
+        };
+        
+        // Clear date inputs
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        document.getElementById('startDateHidden').value = '';
+        document.getElementById('endDateHidden').value = '';
+        
+        // Refresh data
+        this.loadMetrics(false, '', true);
+    }
+    
+    formatDateForInput(dateString) {
+        const date = new Date(dateString);
+        // Use toISOString and split to avoid timezone issues
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
 }
 
 // Global functions for onclick handlers
@@ -3536,50 +3721,90 @@ function selectCurrentDate() {
     selectDate(today.getDate());
 }
 
-// Placeholder functions for date filtering (to be implemented)
+// Date filtering functions
 function filterByDateRange() {
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    console.log('Filter by date range:', startDate, 'to', endDate);
-    // TODO: Implement actual filtering logic
+    const startDate = document.getElementById('startDateHidden').value;
+    const endDate = document.getElementById('endDateHidden').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        alert('Start date cannot be after end date');
+        return;
+    }
+    
+    adminPanel.setDateFilter(startDate, endDate);
 }
 
 function clearDateFilter() {
-    document.getElementById('startDate').value = '';
-    document.getElementById('endDate').value = '';
-    document.getElementById('startDateHidden').value = '';
-    document.getElementById('endDateHidden').value = '';
-    console.log('Date filter cleared');
-    // TODO: Implement actual clear logic
+    adminPanel.clearDateFilter();
 }
 
 function setQuickFilter(period) {
-    const today = new Date();
-    let startDate = new Date();
+    const now = new Date();
+    let startDate, endDate;
     
-    switch(period) {
+    switch (period) {
         case 'today':
-            startDate = new Date();
+            // Create dates without time to avoid timezone issues
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             break;
         case 'week':
-            startDate.setDate(today.getDate() - 7);
+            // Last 7 days including today
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             break;
         case 'month':
-            startDate.setMonth(today.getMonth() - 1);
+            // Current month from 1st to today
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             break;
+        default:
+            return;
     }
     
-    // Update hidden inputs
-    document.getElementById('startDateHidden').value = startDate.toISOString().split('T')[0];
-    document.getElementById('endDateHidden').value = today.toISOString().split('T')[0];
+    // Format dates properly avoiding timezone issues
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
     
-    // Update text inputs
-    updateDateInput('startDate', startDate.toISOString().split('T')[0]);
-    updateDateInput('endDate', today.toISOString().split('T')[0]);
-    
-    console.log('Quick filter set:', period);
-    // TODO: Implement actual filtering logic
+    adminPanel.setDateFilter(
+        formatDate(startDate),
+        formatDate(endDate),
+        period
+    );
 }
+
+// Pagination functions
+function changePageSize(newSize) {
+    adminPanel.tipsPerPage = parseInt(newSize);
+    adminPanel.currentTipsPage = 1; // Reset to first page
+    adminPanel.loadMetrics(false, '', false);
+}
+
+function goToPage(page) {
+    if (page === 'first') {
+        adminPanel.currentTipsPage = 1;
+    } else if (page === 'prev') {
+        adminPanel.currentTipsPage = Math.max(1, adminPanel.currentTipsPage - 1);
+    } else if (page === 'next') {
+        adminPanel.currentTipsPage = Math.min(adminPanel.totalTipsPages, adminPanel.currentTipsPage + 1);
+    } else if (page === 'last') {
+        adminPanel.currentTipsPage = adminPanel.totalTipsPages;
+    } else {
+        adminPanel.currentTipsPage = parseInt(page);
+    }
+    
+    adminPanel.loadMetrics(false, '', false);
+}
+
 
 // ===============================
 // Auto Generate Jackpot Messages
