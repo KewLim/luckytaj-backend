@@ -5389,7 +5389,7 @@ input:focus, textarea:focus, select:focus {
 
 .page-numbers {
     display: grid;
-    grid-template-columns: repeat(3, 36px);
+    grid-template-columns: repeat(5, 36px);
     gap: 4px;
     align-items: center;
 }

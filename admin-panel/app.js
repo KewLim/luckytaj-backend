@@ -3574,11 +3574,8 @@ function openDatePicker(inputId) {
 function updateDateInput(inputId, dateValue) {
     const textInput = document.getElementById(inputId);
     if (dateValue) {
-        // Format date to readable format (DD/MM/YYYY)
-        const date = new Date(dateValue);
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear();
+        // Parse YYYY-MM-DD format directly to avoid timezone issues
+        const [year, month, day] = dateValue.split('-');
         textInput.value = `${day}/${month}/${year}`;
     }
 }
@@ -3705,10 +3702,13 @@ function selectDate(day) {
         
         document.getElementById(targetInputId).value = dateString;
         
-        // Also update hidden input for form submission
+        // Also update hidden input for form submission (avoid timezone issues)
         const hiddenInput = document.getElementById(targetInputId + 'Hidden');
         if (hiddenInput) {
-            hiddenInput.value = selectedCalendarDate.toISOString().split('T')[0];
+            const year = currentYear;
+            const month = (currentMonth + 1).toString().padStart(2, '0');
+            const dayStr = day.toString().padStart(2, '0');
+            hiddenInput.value = `${year}-${month}-${dayStr}`;
         }
     }
     
@@ -3731,7 +3731,7 @@ function filterByDateRange() {
         return;
     }
     
-    if (new Date(startDate) > new Date(endDate)) {
+    if (startDate > endDate) {
         alert('Start date cannot be after end date');
         return;
     }
