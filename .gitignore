@@ -80,3 +80,8 @@ test-*.js
 # Temporary files
 temp/
 tmp/
+
+# Migration scripts (contain sensitive credentials)
+*mongo-to-sqlite-migration.js
+*migration*.js
+*.db
